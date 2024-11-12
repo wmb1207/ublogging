@@ -1,0 +1,14 @@
+version: "3.8"
+
+services:
+  mongo_db:
+    image: mongo:latest
+    container_name: ublogging_mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - ./mongo_data:/data/db
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: $MONGODB_ROOT_USERNAME
+      MONGO_INITDB_ROOT_PASSWORD: $MONGODB_ROOT_PASSWORD
+      MONGO_INITDB_DATABASE: $MONGODB_DBNAME
