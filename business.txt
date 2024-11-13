@@ -1,0 +1,4 @@
+Assumptions:
+
+The token used for the user an the Authorization header its just the UUID (Simple for this example... this should never be like this on a real project)
+There is no validation preventing the user from creating an account with the same Username or password. Decided just to simplify the challenge
