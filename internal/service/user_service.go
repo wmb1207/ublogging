@@ -59,21 +59,33 @@ func (u *UService) Follow(user *models.User, toFollowUUID string) (*models.User,
 
 func (u *UService) Feed(user *models.User) ([]*models.Post, error) {
 	// TODO: Add pagination.
+	// Simulate a feed when no followers exists  by just getting all of them
 	followingUUIDS := []string{}
 	for _, u := range user.Following {
 		followingUUIDS = append(followingUUIDS, u.UUID)
 	}
 
-	feed, err := u.PostRepository.FindBy(repository.FindPostWithUserUUIDInList(followingUUIDS))
-	if err != nil {
-		return nil, err
+	var foundFeed []repository.PostBox
+
+	if len(followingUUIDS) > 0 {
+		feed, err := u.PostRepository.FindBy(repository.FindPostWithUserUUIDInList(followingUUIDS))
+		if err != nil {
+			return nil, err
+		}
+		foundFeed = feed
+	} else {
+		feed, err := u.PostRepository.FindBy(repository.FindPostWithUserNotInUUIDLists([]string{user.UUID}))
+		if err != nil {
+			return nil, err
+		}
+		foundFeed = feed
 	}
 
 	var output []*models.Post
-	for _, post := range feed {
-		output = append(output, post.Unbox())
+	for _, post := range foundFeed {
+		unboxed := post.Unbox()
+		output = append(output, unboxed)
 	}
-
 	return output, nil
 }
 
@@ -92,5 +104,6 @@ func (u *UService) User(uuid string) (*models.User, error) {
 	}
 
 	user.Feed = feed
+
 	return user, nil
 }

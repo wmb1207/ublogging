@@ -18,13 +18,13 @@ type (
 	Post struct {
 		UUID        string   `json:"uuid"`
 		User        *User    `json:"user"`
-		ParentUUID  *string  `json:"parent_uuid"`
+		ParentUUID  *string  `json:"parent_uuid,omitempty"`
 		Type        PostType `json:"type"`
 		ContentData string   `json:"content"`
 		Likes       []Like   `json:"likes"`
-		Repost      []Post   `json:"_"`
+		Repost      []Post   `json:"_,omitempty"`
 		CreatedAt   string   `json:"created_at"`
-		Comments    []Post   `json:"comments"`
+		Comments    []Post   `json:"comments,"`
 	}
 )
 

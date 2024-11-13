@@ -2,6 +2,7 @@ package mongodb
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/wmb1207/ublogging/internal/models"
@@ -13,7 +14,7 @@ import (
 
 type (
 	Post struct {
-		UUID     *primitive.ObjectID `bson:"_id,omitempty"`
+		UUID     primitive.ObjectID  `bson:"_id,omitempty"`
 		UserID   primitive.ObjectID  `bson:"user_id"`
 		Content  string              `bson:"content"`
 		Type     int                 `bson:"type"`
@@ -28,11 +29,6 @@ type (
 		DeletedAt *time.Time `bson:"deleted_at"`
 	}
 
-	PostWithUser struct {
-		Post Post `bson:"post"`
-		User User `bson:"user"`
-	}
-
 	MongoPostRepository struct {
 		baseRepository *MongoRepository
 		postCollection *mongo.Collection
@@ -40,36 +36,46 @@ type (
 )
 
 func FromPostModel(post *models.Post) *Post {
-	getObjectID := func(uuid string) *primitive.ObjectID {
+	getObjectID := func(uuid string) primitive.ObjectID {
 		oID, err := primitive.ObjectIDFromHex(uuid)
-		var objectID *primitive.ObjectID
 		if err != nil {
-			objectID = nil
-		} else {
-			objectID = &oID
+			fmt.Println(err)
 		}
-		return objectID
+		return oID
 	}
 
 	return &Post{
 		UUID:    getObjectID(post.UUID),
-		UserID:  *getObjectID(post.User.UUID),
+		UserID:  getObjectID(post.User.UUID),
 		Content: post.Content(),
 		Type:    int(post.Type),
 	}
 }
 
 func (p *Post) Unbox() *models.Post {
-	return &models.Post{
-		UUID: p.UUID.Hex(),
+	var parentUUID *string = nil
+	if p.ParentID != nil {
+		uuid := p.ParentID.Hex()
+		parentUUID = &uuid
 	}
-}
 
-func (p *PostWithUser) Unbox() *models.Post {
-	post := p.Post.Unbox()
-	user := p.User.Unbox()
-	post.User = user
-	return post
+	uuid := p.UUID.Hex()
+	if p.User != nil {
+		return &models.Post{
+			UUID:        uuid,
+			ParentUUID:  parentUUID,
+			ContentData: p.Content,
+			CreatedAt:   p.CreatedAt.String(),
+			User:        p.User.Unbox(),
+		}
+	}
+	return &models.Post{
+		UUID:        uuid,
+		ParentUUID:  parentUUID,
+		ContentData: p.Content,
+		CreatedAt:   p.CreatedAt.String(),
+	}
+
 }
 
 func NewMongoPostRepository(mongoRepository *MongoRepository) *MongoPostRepository {
@@ -87,7 +93,7 @@ func (m *MongoPostRepository) New(post *models.Post) (repository.PostBox, error)
 	}
 
 	insertedID := inserted.InsertedID.(primitive.ObjectID)
-	model.UUID = &insertedID
+	model.UUID = insertedID
 	return model, nil
 }
 
@@ -120,9 +126,9 @@ func (m *MongoPostRepository) Post(uuid string) (repository.PostBox, error) {
 		return nil, err
 	}
 
-	results := []*PostWithUser{}
+	results := []*Post{}
 	for cursor.Next(context.TODO()) {
-		var result PostWithUser
+		var result Post
 		if err := cursor.Decode(&result); err != nil {
 			return nil, err
 		}
@@ -195,7 +201,50 @@ func (m *MongoPostRepository) FindBy(options ...repository.FindPostWithOption) (
 		}
 
 		for cursor.Next(context.TODO()) {
-			var result PostWithUser
+
+			var result Post
+			if err := cursor.Decode(&result); err != nil {
+				return nil, err
+			}
+
+			output = append(output, &result)
+		}
+
+		if err := cursor.Err(); err != nil {
+			return nil, err
+		}
+
+		return output, nil
+	}
+
+	if len(queryOptions.NotInUserUUIDS) > 0 {
+
+		objectIDS, err := toObjectIDs(queryOptions.NotInUserUUIDS)
+		if err != nil {
+			return nil, err
+		}
+
+		pipeline = mongo.Pipeline{
+			{{"$match", bson.D{{"user_id", bson.D{{"$nin", objectIDS}}}}}},
+			{{"$lookup", bson.D{
+				{"from", "users"},
+				{"localField", "user_id"},
+				{"foreignField", "_id"},
+				{"as", "user"},
+			}}},
+			{
+				{"$unwind", bson.M{"path": "$user"}},
+			},
+		}
+
+		cursor, err := m.postCollection.Aggregate(context.TODO(), pipeline)
+		if err != nil {
+			return nil, err
+		}
+
+		for cursor.Next(context.TODO()) {
+
+			var result Post
 			if err := cursor.Decode(&result); err != nil {
 				return nil, err
 			}

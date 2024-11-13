@@ -47,7 +47,7 @@ func WithUserRouter(userHandler *handler.UserHandler, middlewares ...gin.Handler
 		users := router.Group("/users")
 		users.POST("", userHandler.New)
 		users.GET("/feed", append(middlewares, userHandler.Feed)...)
-		users.GET("/:user_uuid", append(middlewares, userHandler.User)...)
+		users.POST("/:user_uuid/follow", append(middlewares, userHandler.Follow)...)
 	}
 }
 

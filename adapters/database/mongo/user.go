@@ -33,16 +33,19 @@ type (
 )
 
 func (u *User) Unbox() *models.User {
-
 	following := []*models.User{}
 	followers := []*models.User{}
 
-	for _, user := range u.FollowingUsers {
-		following = append(following, user.Unbox())
+	if u.FollowingUsers != nil {
+		for _, user := range u.FollowingUsers {
+			following = append(following, user.Unbox())
+		}
 	}
 
-	for _, user := range u.FollowersUsers {
-		followers = append(followers, user.Unbox())
+	if u.FollowersUsers != nil {
+		for _, user := range u.FollowersUsers {
+			followers = append(followers, user.Unbox())
+		}
 	}
 
 	return &models.User{
@@ -109,11 +112,13 @@ func (m *MongoUserRepository) User(uuid string) (repository.UserBox, error) {
 	}
 
 	followingUUIDS := []string{}
+
 	for _, uuid := range user.Following {
 		followingUUIDS = append(followingUUIDS, uuid.Hex())
 	}
 
 	following, err := m.FindBy(repository.WithUUIDS(followingUUIDS))
+
 	if err != nil {
 		return nil, err
 	}
@@ -148,9 +153,9 @@ func (m *MongoUserRepository) FindBy(options ...repository.FindUserWithOption) (
 			filters,
 			bson.E{
 				Key: "_id",
-				Value: bson.E{
+				Value: bson.D{{
 					Key: "$in", Value: objectIDS,
-				},
+				}},
 			},
 		)
 
@@ -168,6 +173,10 @@ func (m *MongoUserRepository) FindBy(options ...repository.FindUserWithOption) (
 
 	output := []repository.UserBox{}
 
+	if len(filters) == 0 {
+		return output, nil
+	}
+
 	cursor, err := m.userCollection.Find(context.TODO(), filters)
 	if err != nil {
 		return nil, err
@@ -180,6 +189,7 @@ func (m *MongoUserRepository) FindBy(options ...repository.FindUserWithOption) (
 		if err := cursor.Decode(&user); err != nil {
 			return nil, err
 		}
+
 		output = append(output, &user)
 	}
 	if err := cursor.Err(); err != nil {

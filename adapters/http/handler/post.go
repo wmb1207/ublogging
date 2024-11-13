@@ -16,8 +16,7 @@ type (
 	}
 
 	NewPostReq struct {
-		UserUUID string `json:"user_uuid"`
-		Content  string `json:"content"`
+		Content string `json:"content"`
 
 		ParentUUID *string `json:"parent_uuid"`
 	}

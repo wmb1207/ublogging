@@ -40,7 +40,8 @@ func main() {
 		cfg,
 		cfg.ENV,
 		http.WithUserRouter(userHandler, userTokenMiddleware),
-		http.WithPostRouter(postHandler, userTokenMiddleware))
+		http.WithPostRouter(postHandler, userTokenMiddleware),
+	)
 
 	router.Run("0.0.0.0:" + strconv.Itoa(cfg.Port))
 }

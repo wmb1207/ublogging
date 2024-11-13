@@ -4,14 +4,15 @@ import "github.com/wmb1207/ublogging/internal/models"
 
 type (
 	FindPostByOptions struct {
-		UUID         string
-		User         *models.User
-		UserUUID     string
-		UserUUIDS    []string
-		UserEmail    string
-		UserUsername string
-		ParentUUID   string
-		PostType     models.PostType
+		UUID           string
+		User           *models.User
+		UserUUID       string
+		UserUUIDS      []string
+		NotInUserUUIDS []string
+		UserEmail      string
+		UserUsername   string
+		ParentUUID     string
+		PostType       models.PostType
 	}
 
 	FindPostWithOption func(*FindPostByOptions)
@@ -37,6 +38,12 @@ func FindPostWithUserUUID(uuid string) FindPostWithOption {
 func FindPostWithUserUUIDInList(uuids []string) FindPostWithOption {
 	return func(f *FindPostByOptions) {
 		f.UserUUIDS = uuids
+	}
+}
+
+func FindPostWithUserNotInUUIDLists(uuids []string) FindPostWithOption {
+	return func(f *FindPostByOptions) {
+		f.NotInUserUUIDS = uuids
 	}
 }
 

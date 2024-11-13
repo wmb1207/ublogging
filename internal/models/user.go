@@ -10,7 +10,7 @@ type (
 
 		CreatedAt string `json:"created_at"`
 
-		Feed []*Post `json:"feed"`
+		Feed []*Post `json:"feed,omitempty"`
 	}
 
 	option func(*User)

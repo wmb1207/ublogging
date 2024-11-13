@@ -58,20 +58,15 @@ func (u *UserHandler) New(ctx *gin.Context) {
 }
 
 func (u *UserHandler) User(ctx *gin.Context) {
-	uuid := ctx.Param("user_uuid")
-
-	user, err := u.UserService.User(uuid)
-	if err != nil {
-		ctx.JSON(http.StatusNotFound, gin.H{
-			"error": "User not found " + uuid,
-			"data":  err.Error(),
-		})
+	iuser, exist := ctx.Get("user")
+	if !exist {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Missing user", "message": "missing user"})
 		ctx.Abort()
 		return
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{
-		"data":    user,
+		"data":    iuser.(*models.User),
 		"mesasge": "Users feed",
 	})
 }
