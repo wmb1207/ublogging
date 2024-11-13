@@ -1,7 +1,6 @@
 package mongodb
 
 import (
-	"fmt"
 	"strconv"
 	"testing"
 
@@ -25,7 +24,6 @@ func TestCreatePost(t *testing.T) {
 	}
 
 	unboxed := ubox.Unbox()
-	fmt.Println(unboxed.UUID)
 
 	if ubox.Unbox().UUID == "" {
 		t.Errorf("error unboxing user -> missing UUID")
@@ -68,7 +66,6 @@ func TestListPosts(t *testing.T) {
 	}
 
 	unboxed := ubox.Unbox()
-	fmt.Println(unboxed.UUID)
 
 	if ubox.Unbox().UUID == "" {
 		t.Errorf("error unboxing user -> missing UUID")

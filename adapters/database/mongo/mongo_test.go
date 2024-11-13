@@ -1,7 +1,6 @@
 package mongodb
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/wmb1207/ublogging/internal/models"
@@ -35,7 +34,6 @@ func TestCreateUser(t *testing.T) {
 	}
 
 	unboxed := ubox.Unbox()
-	fmt.Println(unboxed.UUID)
 
 	if ubox.Unbox().UUID == "" {
 		t.Errorf("error unboxing user -> missing UUID")
@@ -58,7 +56,6 @@ func TestGetUser(t *testing.T) {
 	}
 
 	unboxed := ubox.Unbox()
-	fmt.Println(unboxed.UUID)
 
 	if ubox.Unbox().UUID == "" {
 		t.Errorf("error unboxing user -> missing UUID")
@@ -69,7 +66,6 @@ func TestGetUser(t *testing.T) {
 		t.Errorf(err.Error())
 	}
 
-	fmt.Println(found)
 	if found.Unbox().UUID != unboxed.UUID {
 		t.Errorf("Error user with UUID: %s Not found", unboxed.UUID)
 	}

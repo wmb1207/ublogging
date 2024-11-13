@@ -286,7 +286,6 @@ func (m *MongoPostRepository) FindBy(options ...repository.FindPostWithOption) (
 	findOptions.SetSkip(int64(skip))
 	findOptions.SetLimit(int64(queryOptions.Limit))
 
-	fmt.Printf("%++v", query)
 	cursor, err := m.postCollection.Find(context.TODO(), query, findOptions)
 
 	if err != nil {
