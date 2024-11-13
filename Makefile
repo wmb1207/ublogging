@@ -33,3 +33,8 @@ test: run-mongo
 	@echo "waiting 10 seconds for the containers to start running"
 	@sleep 10
 	go test ./...
+
+.PHONY: http-create-user
+http-create-user:
+	@curl -X POST http://localhost:9099/api/users -H "Content-Type: application/json" -d '{ "username": "wenceslao1207", "email": "wmb1207@testing.com" }'
+

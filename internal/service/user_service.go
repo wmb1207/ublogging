@@ -10,6 +10,7 @@ type (
 		New(user *models.User) (*models.User, error)
 		Feed(user *models.User) ([]*models.Post, error)
 		User(uuid string) (*models.User, error)
+		Follow(user *models.User, toFollowUUID string) (*models.User, error)
 	}
 
 	UService struct {
@@ -26,6 +27,9 @@ func NewUserService(userRepo repository.UserRepository, postRepo repository.Post
 }
 
 func (u *UService) New(user *models.User) (*models.User, error) {
+	// First check if the user exists on the DB
+	// I've implemented a really simple and BAD user management.
+	// This is just for testing
 	userBox, err := u.UserRepository.New(user)
 	if err != nil {
 		return nil, err
@@ -34,6 +38,23 @@ func (u *UService) New(user *models.User) (*models.User, error) {
 	newUser := userBox.Unbox()
 
 	return newUser, nil
+}
+
+func (u *UService) Follow(user *models.User, toFollowUUID string) (*models.User, error) {
+	knownFollowing := []string{}
+
+	for _, following := range user.Following {
+		knownFollowing = append(knownFollowing, following.UUID)
+	}
+
+	ubox, err := u.UserRepository.Update(user, map[string]interface{}{
+		"following": append(knownFollowing, toFollowUUID),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return ubox.Unbox(), nil
 }
 
 func (u *UService) Feed(user *models.User) ([]*models.Post, error) {

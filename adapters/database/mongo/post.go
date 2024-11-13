@@ -171,7 +171,7 @@ func (m *MongoPostRepository) FindBy(options ...repository.FindPostWithOption) (
 
 	if len(queryOptions.UserUUIDS) > 0 {
 
-		objectIDS, err := m.toObjectIDs(queryOptions.UserUUIDS)
+		objectIDS, err := toObjectIDs(queryOptions.UserUUIDS)
 		if err != nil {
 			return nil, err
 		}
@@ -235,19 +235,4 @@ func (m *MongoPostRepository) FindBy(options ...repository.FindPostWithOption) (
 func (m *MongoPostRepository) Delete(post *models.Post) error {
 	// TODO: Implement this, Not required right now
 	return nil
-}
-
-func (m *MongoPostRepository) toObjectIDs(uuids []string) ([]primitive.ObjectID, error) {
-	output := []primitive.ObjectID{}
-	for _, uuid := range uuids {
-		objectID, err := primitive.ObjectIDFromHex(uuid)
-		if err != nil {
-			return nil, err
-		}
-
-		output = append(output, objectID)
-	}
-
-	return output, nil
-
 }

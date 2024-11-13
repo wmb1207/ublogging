@@ -3,6 +3,7 @@ package mongodb
 import (
 	"context"
 
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -77,4 +78,19 @@ func NewMongoRepository(buildOptions ...MongoRepositoryConfig) (*MongoRepository
 	mr.mongoClient = client
 
 	return mr, nil
+}
+
+func toObjectIDs(uuids []string) ([]primitive.ObjectID, error) {
+	output := []primitive.ObjectID{}
+	for _, uuid := range uuids {
+		objectID, err := primitive.ObjectIDFromHex(uuid)
+		if err != nil {
+			return nil, err
+		}
+
+		output = append(output, objectID)
+	}
+
+	return output, nil
+
 }

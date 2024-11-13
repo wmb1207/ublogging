@@ -19,8 +19,11 @@ type (
 		CreatedAt time.Time            `bson:"created_at"`
 		UpdatedAt time.Time            `bson:"updated_at"`
 		DeletedAt *time.Time           `bson:"deleted_at"`
-		Following []primitive.ObjectID `bson:"folowing"`
-		Followers []primitive.ObjectID `bson:"folowers"`
+		Following []primitive.ObjectID `bson:"following"`
+		Followers []primitive.ObjectID `bson:"followers"`
+
+		FollowingUsers []repository.UserBox
+		FollowersUsers []repository.UserBox
 	}
 
 	MongoUserRepository struct {
@@ -30,10 +33,27 @@ type (
 )
 
 func (u *User) Unbox() *models.User {
+
+	following := []*models.User{}
+	followers := []*models.User{}
+
+	for _, user := range u.FollowingUsers {
+		following = append(following, user.Unbox())
+	}
+
+	for _, user := range u.FollowersUsers {
+		followers = append(followers, user.Unbox())
+	}
+
 	return &models.User{
 		UUID:     u.UUID.Hex(),
 		Username: u.Username,
 		Email:    u.Email,
+
+		Followers: followers,
+		Following: following,
+
+		CreatedAt: u.CreatedAt.Format("2006-01-02"),
 	}
 }
 
@@ -88,6 +108,18 @@ func (m *MongoUserRepository) User(uuid string) (repository.UserBox, error) {
 		return nil, m.handleError(err)
 	}
 
+	followingUUIDS := []string{}
+	for _, uuid := range user.Following {
+		followingUUIDS = append(followingUUIDS, uuid.Hex())
+	}
+
+	following, err := m.FindBy(repository.WithUUIDS(followingUUIDS))
+	if err != nil {
+		return nil, err
+	}
+
+	user.FollowingUsers = following
+
 	return &user, nil
 }
 
@@ -97,24 +129,41 @@ func (m *MongoUserRepository) FindBy(options ...repository.FindUserWithOption) (
 		option(queryOptions)
 	}
 
-	filters := bson.M{}
+	filters := bson.D{}
 
 	if queryOptions.UUID != "" {
 		objectID, err := primitive.ObjectIDFromHex(queryOptions.UUID)
 		if err != nil {
 			return nil, err
 		}
-		filters["_id"] = objectID
+		filters = append(filters, bson.E{Key: "_id", Value: objectID})
+	}
+
+	if len(queryOptions.UUIDS) > 0 {
+		objectIDS, err := toObjectIDs(queryOptions.UUIDS)
+		if err != nil {
+			return nil, err
+		}
+		filters = append(
+			filters,
+			bson.E{
+				Key: "_id",
+				Value: bson.E{
+					Key: "$in", Value: objectIDS,
+				},
+			},
+		)
+
 	}
 
 	// This should be by regex but well... let's make this simple for now
 	if queryOptions.Email != "" {
-		filters["email"] = queryOptions.Email
+		filters = append(filters, bson.E{Key: "email", Value: queryOptions.Email})
 	}
 
 	// This should be by regex but well... let's make this simple for now
 	if queryOptions.Username != "" {
-		filters["email"] = queryOptions.Email
+		filters = append(filters, bson.E{Key: "username", Value: queryOptions.Username})
 	}
 
 	output := []repository.UserBox{}
@@ -140,7 +189,33 @@ func (m *MongoUserRepository) FindBy(options ...repository.FindUserWithOption) (
 	return output, nil
 }
 
-func (m *MongoUserRepository) Delete(user *User) error {
+func (m *MongoUserRepository) Update(user *models.User, toUpdate map[string]interface{}) (repository.UserBox, error) {
+	objectID, err := primitive.ObjectIDFromHex(user.UUID)
+	if err != nil {
+		return nil, err
+	}
+	filter := bson.D{{Key: "_id", Value: objectID}}
+
+	updateFieldsQuery := bson.D{}
+
+	for key, value := range toUpdate {
+		updateFieldsQuery = append(updateFieldsQuery, bson.E{Key: key, Value: value})
+	}
+
+	query := bson.D{{Key: "$set", Value: updateFieldsQuery}}
+
+	ctx, cancel := context.WithTimeout(context.TODO(), 10*time.Second)
+	defer cancel()
+
+	_, err = m.userCollection.UpdateOne(ctx, filter, query)
+	if err != nil {
+		return nil, err
+	}
+
+	return m.User(user.UUID)
+}
+
+func (m *MongoUserRepository) Delete(user *models.User) error {
 	// Not Implemented for this example
 	return nil
 }

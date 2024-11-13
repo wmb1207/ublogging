@@ -2,13 +2,15 @@ package models
 
 type (
 	User struct {
-		UUID      string
-		Username  string
-		Email     string
-		Followers []*User
-		Following []*User
+		UUID      string  `json:"uuid"`
+		Username  string  `json:"username"`
+		Email     string  `json:"email"`
+		Followers []*User `json:"followers"`
+		Following []*User `json:"following"`
 
-		Feed []*Post
+		CreatedAt string `json:"created_at"`
+
+		Feed []*Post `json:"feed"`
 	}
 
 	option func(*User)

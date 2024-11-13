@@ -11,24 +11,20 @@ type (
 	}
 
 	Like struct {
-		User      User
-		CreatedAt string
+		User      User   `json:"user"`
+		CreatedAt string `json:created_at"`
 	}
 
 	Post struct {
-		UUID string
-		User *User
-
-		ParentUUID *string
-
-		Type PostType
-
-		content string
-		likes   []Like
-		repost  []Post
-
-		createdAt string
-		comments  []Post
+		UUID        string   `json:"uuid"`
+		User        *User    `json:"user"`
+		ParentUUID  *string  `json:"parent_uuid"`
+		Type        PostType `json:"type"`
+		ContentData string   `json:"content"`
+		Likes       []Like   `json:"likes"`
+		Repost      []Post   `json:"_"`
+		CreatedAt   string   `json:"created_at"`
+		Comments    []Post   `json:"comments"`
 	}
 )
 
@@ -41,10 +37,10 @@ const (
 
 func NewPost(content string, user *User) *Post {
 	return &Post{
-		UUID:    "",
-		User:    user,
-		Type:    TypePost,
-		content: content,
+		UUID:        "",
+		User:        user,
+		Type:        TypePost,
+		ContentData: content,
 	}
 }
 
@@ -54,7 +50,7 @@ func (c ContentTooLongError) Error() string {
 }
 
 func (p *Post) Content() string {
-	return p.content
+	return p.ContentData
 }
 
 func (p *Post) SetContent(content string) error {
@@ -64,7 +60,7 @@ func (p *Post) SetContent(content string) error {
 			"Post Content exceded maximum length",
 		}
 	}
-	p.content = content
+	p.ContentData = content
 	return nil
 }
 
@@ -75,7 +71,7 @@ func (p *Post) RePost(user *User) {
 		Type: TypeRepost,
 	}
 
-	p.repost = append(p.repost, repost)
+	p.Repost = append(p.Repost, repost)
 }
 
 func (p *Post) Like(user User) {
@@ -91,18 +87,18 @@ func (p *Post) Like(user User) {
 		CreatedAt: formattedTime,
 	}
 
-	p.likes = append(p.likes, like)
+	p.Likes = append(p.Likes, like)
 }
 
 func (p *Post) Comment(content string, user *User) *Post {
 	comment := Post{
-		UUID:       "",
-		User:       user,
-		Type:       TypeComment,
-		content:    content,
-		ParentUUID: &p.UUID,
+		UUID:        "",
+		User:        user,
+		Type:        TypeComment,
+		ContentData: content,
+		ParentUUID:  &p.UUID,
 	}
 
-	p.comments = append(p.comments, comment)
+	p.Comments = append(p.Comments, comment)
 	return &comment
 }

@@ -33,6 +33,11 @@ func (m *MockUserRepository) User(uuid string) (repository.UserBox, error) {
 	return args.Get(0).(repository.UserBox), args.Error(1)
 }
 
+func (m *MockUserRepository) Update(user *models.User, toUpdate map[string]interface{}) (repository.UserBox, error) {
+	args := m.Called(user)
+	return args.Get(0).(repository.UserBox), args.Error(1)
+}
+
 func (m *MockUserRepository) FindBy(options ...repository.FindUserWithOption) ([]repository.UserBox, error) {
 	args := m.Called(options)
 	return args.Get(0).([]repository.UserBox), args.Error(1)

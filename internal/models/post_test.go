@@ -12,7 +12,7 @@ func TestNewPost(t *testing.T) {
 	post := NewPost("Hello, World!", &user)
 
 	assert.Equal(t, post.User.UUID, user.UUID)
-	assert.Equal(t, post.content, "Hello, World!")
+	assert.Equal(t, post.ContentData, "Hello, World!")
 
 }
 
@@ -34,8 +34,8 @@ func TestLike(t *testing.T) {
 
 	post.Like(user2)
 
-	assert.Equal(t, len(post.likes), 1)
-	assert.Equal(t, post.likes[0].User.UUID, user2.UUID)
+	assert.Equal(t, len(post.Likes), 1)
+	assert.Equal(t, post.Likes[0].User.UUID, user2.UUID)
 }
 
 func TestComment(t *testing.T) {
@@ -44,7 +44,7 @@ func TestComment(t *testing.T) {
 
 	post.Comment("This is a comment", &user)
 
-	assert.Equal(t, len(post.comments), 1)
-	assert.Equal(t, post.comments[0].content, "This is a comment")
+	assert.Equal(t, len(post.Comments), 1)
+	assert.Equal(t, post.Comments[0].ContentData, "This is a comment")
 
 }
