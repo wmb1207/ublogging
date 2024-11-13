@@ -1,8 +1,8 @@
 package handler
 
 import (
-	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/wmb1207/ublogging/internal/models"
@@ -17,8 +17,6 @@ type (
 
 	NewPostReq struct {
 		Content string `json:"content"`
-
-		ParentUUID *string `json:"parent_uuid"`
 	}
 )
 
@@ -86,6 +84,33 @@ func (p *PostHandler) Post(ctx *gin.Context) {
 		return
 	}
 
+	page := ctx.DefaultQuery("page", "1")
+	limit := ctx.DefaultQuery("limit", "10")
+
+	pageInt, err := strconv.Atoi(page)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid page number", "message": "Invalid page"})
+		return
+	}
+
+	limitInt, err := strconv.Atoi(limit)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid limit number", "message": "Invalid limit"})
+		return
+	}
+
+	comments, err := p.PostService.Comments(post, pageInt, limitInt)
+	if err != nil {
+		ctx.JSON(http.StatusNotFound, gin.H{
+			"error": "no post found",
+			"data":  err.Error(),
+		})
+		ctx.Abort()
+		return
+	}
+
+	post.Comments = comments
+
 	ctx.JSON(http.StatusOK, gin.H{
 		"data":    post,
 		"mesasge": "Post found",
@@ -104,16 +129,6 @@ func (p *PostHandler) Comment(ctx *gin.Context) {
 		})
 		ctx.Abort()
 		return
-	}
-
-	if body.ParentUUID == nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{
-			"error": "Invalid request",
-			"data":  fmt.Errorf("Missing parent post uuid"),
-		})
-		ctx.Abort()
-		return
-
 	}
 
 	iuser, exist := ctx.Get("user")
@@ -147,13 +162,28 @@ func (p *PostHandler) Comment(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, gin.H{
 		"data":    updatedPost,
-		"mesasge": "Post commented",
+		"message": "Post commented",
 	})
 
 }
 
 func (p *PostHandler) Comments(ctx *gin.Context) {
 	uuid := ctx.Param("post_uuid")
+
+	page := ctx.DefaultQuery("page", "1")
+	limit := ctx.DefaultQuery("limit", "10")
+
+	pageInt, err := strconv.Atoi(page)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid page number", "message": "Invalid page"})
+		return
+	}
+
+	limitInt, err := strconv.Atoi(limit)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid limit number", "message": "Invalid limit"})
+		return
+	}
 
 	post, err := p.PostService.Post(uuid)
 	if err != nil {
@@ -165,7 +195,7 @@ func (p *PostHandler) Comments(ctx *gin.Context) {
 		return
 	}
 
-	comments, _ := p.PostService.Comments(post)
+	comments, _ := p.PostService.Comments(post, pageInt, limitInt)
 	post.Comments = comments
 
 	ctx.JSON(http.StatusOK, gin.H{

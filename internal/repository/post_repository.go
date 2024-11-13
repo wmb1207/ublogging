@@ -13,6 +13,9 @@ type (
 		UserUsername   string
 		ParentUUID     string
 		PostType       models.PostType
+
+		Page  int
+		Limit int
 	}
 
 	FindPostWithOption func(*FindPostByOptions)
@@ -56,5 +59,12 @@ func FindPostWithParentUUID(uuid string) FindPostWithOption {
 func FindPostWithType(postType models.PostType) FindPostWithOption {
 	return func(f *FindPostByOptions) {
 		f.PostType = postType
+	}
+}
+
+func FindPostWithPage(page, limit int) FindPostWithOption {
+	return func(f *FindPostByOptions) {
+		f.Page = page
+		f.Limit = limit
 	}
 }

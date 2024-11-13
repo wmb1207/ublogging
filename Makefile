@@ -1,6 +1,5 @@
 main_package_path = cmd/ublogging/main.go
-bynary_name = bin/ublogging
-
+binary_name = bin/ublogging
 
 .PHONY: build
 build:
@@ -38,12 +37,20 @@ http-create-user:
 
 .PHONY: http-follow-user
 http-follow-user:
-	@curl -X POST http://localhost:9099/api/users/67341cee237d4efe689e9770/follow -H "Content-Type: application/json" -H "Authorization: 67341cf3237d4efe689e9771" 
+	@curl -X POST http://localhost:9099/api/users/6732d083987d31f35eba4a6f/follow -H "Content-Type: application/json" -H "Authorization: 67341cf3237d4efe689e9771" | jq '.'
 
 .PHONY: http-user
 http-user:
-	@curl -X GET http://localhost:9099/api/users/feed -H "Content-Type: application/json" -H "Authorization: 67341cf3237d4efe689e9771" | jq '.'
+	@curl -X GET "http://localhost:9099/api/users/feed?page=1&limit=2" -H "Content-Type: application/json" -H "Authorization: 67341cf3237d4efe689e9771" | jq '.'
 
 .PHONY: http-post
 http-post:
-	@curl -X POST http://localhost:9099/api/posts -H "Content-Type: application/json" -H "Authorization: 67341cee237d4efe689e9770" -d '{"Content": "testing by lao" }' | jq '.'
+	@curl -X POST http://localhost:9099/api/posts -H "Content-Type: application/json" -H "Authorization: 6732d083987d31f35eba4a6f" -d '{"Content": "testing a second user that Im following" }' | jq '.'
+
+.PHONY: http-comment
+http-comment:
+	@curl -X POST http://localhost:9099/api/posts/67349951a2bf4775831a9c86  -H "Content-Type: application/json" -H "Authorization: 67341cee237d4efe689e9770" -d '{"Content": "comment by lao"}' | jq '.'
+
+.PHONY: http-comments
+http-comments:
+	@curl -X GET http://localhost:9099/api/posts/67349951a2bf4775831a9c86 -H "Content-Type: application/json" -H "Authorization: 67341cf3237d4efe689e9771" | jq '.'

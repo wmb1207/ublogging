@@ -1,11 +1,11 @@
 package handler
 
 import (
-	"net/http"
-
 	"github.com/gin-gonic/gin"
 	"github.com/wmb1207/ublogging/internal/models"
 	"github.com/wmb1207/ublogging/internal/service"
+	"net/http"
+	"strconv"
 )
 
 type (
@@ -67,7 +67,7 @@ func (u *UserHandler) User(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, gin.H{
 		"data":    iuser.(*models.User),
-		"mesasge": "Users feed",
+		"message": "Users feed",
 	})
 }
 
@@ -100,7 +100,23 @@ func (u *UserHandler) Feed(ctx *gin.Context) {
 		ctx.Abort()
 		return
 	}
-	feed, err := u.UserService.Feed(user.(*models.User))
+
+	page := ctx.DefaultQuery("page", "1")
+	limit := ctx.DefaultQuery("limit", "10")
+
+	pageInt, err := strconv.Atoi(page)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid page number", "message": "Invalid page"})
+		return
+	}
+
+	limitInt, err := strconv.Atoi(limit)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid limit number", "message": "Invalid limit"})
+		return
+	}
+
+	feed, err := u.UserService.Feed(user.(*models.User), pageInt, limitInt)
 	if err != nil {
 		ctx.JSON(http.StatusNotFound, gin.H{
 			"error": "Feed not found for user",
@@ -115,6 +131,8 @@ func (u *UserHandler) Feed(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, gin.H{
 		"data":    castedUser,
-		"mesasge": "Users feed",
+		"page":    page,
+		"limit":   limit,
+		"message": "Users feed",
 	})
 }

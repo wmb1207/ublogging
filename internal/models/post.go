@@ -17,7 +17,7 @@ type (
 
 	Post struct {
 		UUID        string   `json:"uuid"`
-		User        *User    `json:"user"`
+		User        *User    `json:"user,omitempty"`
 		ParentUUID  *string  `json:"parent_uuid,omitempty"`
 		Type        PostType `json:"type"`
 		ContentData string   `json:"content"`

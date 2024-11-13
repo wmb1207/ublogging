@@ -3,6 +3,7 @@ package mongodb
 import (
 	"context"
 	"fmt"
+	optionsMongo "go.mongodb.org/mongo-driver/mongo/options"
 	"time"
 
 	"github.com/wmb1207/ublogging/internal/models"
@@ -44,11 +45,21 @@ func FromPostModel(post *models.Post) *Post {
 		return oID
 	}
 
+	var parentUUID *primitive.ObjectID
+
+	if post.ParentUUID != nil {
+		pUUID := getObjectID(*post.ParentUUID)
+		parentUUID = &pUUID
+	}
+
 	return &Post{
-		UUID:    getObjectID(post.UUID),
-		UserID:  getObjectID(post.User.UUID),
-		Content: post.Content(),
-		Type:    int(post.Type),
+		UUID:      getObjectID(post.UUID),
+		UserID:    getObjectID(post.User.UUID),
+		Content:   post.Content(),
+		Type:      int(post.Type),
+		ParentID:  parentUUID,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
 	}
 }
 
@@ -111,7 +122,7 @@ func (m *MongoPostRepository) Post(uuid string) (repository.PostBox, error) {
 		{
 			{"$lookup", bson.M{
 				"from":         "users",
-				"localfield":   "user_id",
+				"localField":   "user_id",
 				"foreignField": "_id",
 				"as":           "user",
 			}},
@@ -119,6 +130,7 @@ func (m *MongoPostRepository) Post(uuid string) (repository.PostBox, error) {
 		{
 			{"$unwind", bson.M{"path": "$user"}},
 		},
+		{{"$sort", bson.D{{"created_at", -1}}}},
 	}
 
 	cursor, err := m.postCollection.Aggregate(context.TODO(), pipeline)
@@ -155,10 +167,15 @@ func (m *MongoPostRepository) FindBy(options ...repository.FindPostWithOption) (
 	var pipeline mongo.Pipeline
 	var output []repository.PostBox
 
+	skip := 0
 	query := bson.D{}
 
 	if queryOptions.UUID != "" {
 		query = append(query, bson.E{Key: "_id", Value: queryOptions.UUID})
+	}
+
+	if queryOptions.Page > 0 && queryOptions.Limit > 0 {
+		skip = (queryOptions.Page - 1) * queryOptions.Limit
 	}
 
 	if queryOptions.ParentUUID != "" {
@@ -193,6 +210,9 @@ func (m *MongoPostRepository) FindBy(options ...repository.FindPostWithOption) (
 			{
 				{"$unwind", bson.M{"path": "$user"}},
 			},
+			{{"$sort", bson.D{{"created_at", -1}}}},
+			{{"$skip", skip}},
+			{{"$limit", queryOptions.Limit}},
 		}
 
 		cursor, err := m.postCollection.Aggregate(context.TODO(), pipeline)
@@ -235,6 +255,9 @@ func (m *MongoPostRepository) FindBy(options ...repository.FindPostWithOption) (
 			{
 				{"$unwind", bson.M{"path": "$user"}},
 			},
+			{{"$sort", bson.D{{"created_at", -1}}}},
+			{{"$skip", skip}},
+			{{"$limit", queryOptions.Limit}},
 		}
 
 		cursor, err := m.postCollection.Aggregate(context.TODO(), pipeline)
@@ -259,7 +282,12 @@ func (m *MongoPostRepository) FindBy(options ...repository.FindPostWithOption) (
 		return output, nil
 	}
 
-	cursor, err := m.postCollection.Find(context.TODO(), query)
+	findOptions := optionsMongo.Find()
+	findOptions.SetSkip(int64(skip))
+	findOptions.SetLimit(int64(queryOptions.Limit))
+
+	fmt.Printf("%++v", query)
+	cursor, err := m.postCollection.Find(context.TODO(), query, findOptions)
 
 	if err != nil {
 		return nil, err

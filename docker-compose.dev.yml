@@ -1,6 +1,10 @@
 version: "3.8"
 
 services:
+
+  app:
+    build: .
+
   mongo_db:
     image: mongo:latest
     container_name: ublogging_mongo

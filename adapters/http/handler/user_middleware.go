@@ -19,10 +19,10 @@ func TokenAuthMiddleware(service service.UserService) gin.HandlerFunc {
 			return
 		}
 
-		// Here we should have a propper token. We are just going to use the user uuid as the token... just to make it
+		// Here we should have a proper token. We are just going to use the user uuid as the token... just to make it
 		// easier
 
-		user, err := service.User(token)
+		user, err := service.User(token, 1, 1)
 		if err != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Missing not found", "message": "Unauthorized"})
 		}

@@ -8,8 +8,8 @@ import (
 type (
 	UserService interface {
 		New(user *models.User) (*models.User, error)
-		Feed(user *models.User) ([]*models.Post, error)
-		User(uuid string) (*models.User, error)
+		Feed(user *models.User, page, limit int) ([]*models.Post, error)
+		User(uuid string, page, limit int) (*models.User, error)
 		Follow(user *models.User, toFollowUUID string) (*models.User, error)
 	}
 
@@ -57,7 +57,7 @@ func (u *UService) Follow(user *models.User, toFollowUUID string) (*models.User,
 	return ubox.Unbox(), nil
 }
 
-func (u *UService) Feed(user *models.User) ([]*models.Post, error) {
+func (u *UService) Feed(user *models.User, page, limit int) ([]*models.Post, error) {
 	// TODO: Add pagination.
 	// Simulate a feed when no followers exists  by just getting all of them
 	followingUUIDS := []string{}
@@ -68,13 +68,13 @@ func (u *UService) Feed(user *models.User) ([]*models.Post, error) {
 	var foundFeed []repository.PostBox
 
 	if len(followingUUIDS) > 0 {
-		feed, err := u.PostRepository.FindBy(repository.FindPostWithUserUUIDInList(followingUUIDS))
+		feed, err := u.PostRepository.FindBy(repository.FindPostWithUserUUIDInList(followingUUIDS), repository.FindPostWithPage(page, limit))
 		if err != nil {
 			return nil, err
 		}
 		foundFeed = feed
 	} else {
-		feed, err := u.PostRepository.FindBy(repository.FindPostWithUserNotInUUIDLists([]string{user.UUID}))
+		feed, err := u.PostRepository.FindBy(repository.FindPostWithUserNotInUUIDLists([]string{user.UUID}), repository.FindPostWithPage(page, limit))
 		if err != nil {
 			return nil, err
 		}
@@ -89,7 +89,7 @@ func (u *UService) Feed(user *models.User) ([]*models.Post, error) {
 	return output, nil
 }
 
-func (u *UService) User(uuid string) (*models.User, error) {
+func (u *UService) User(uuid string, page, limit int) (*models.User, error) {
 	ubox, err := u.UserRepository.User(uuid)
 	if err != nil {
 		return nil, err
@@ -97,7 +97,7 @@ func (u *UService) User(uuid string) (*models.User, error) {
 
 	user := ubox.Unbox()
 
-	feed, err := u.Feed(user)
+	feed, err := u.Feed(user, page, limit)
 
 	if err != nil {
 		return nil, err

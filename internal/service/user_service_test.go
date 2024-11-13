@@ -53,7 +53,7 @@ func TestUService_Feed(t *testing.T) {
 
 	mockPostRepo.On("FindBy", mock.Anything).Return(posts, nil)
 
-	feed, err := service.Feed(user)
+	feed, err := service.Feed(user, 1, 1)
 
 	assert.NoError(t, err)
 	assert.Equal(t, 2, len(feed))
@@ -77,7 +77,7 @@ func TestUService_User(t *testing.T) {
 
 	mockPostRepo.On("FindBy", mock.Anything).Return(posts, nil)
 
-	resultUser, err := service.User("user1")
+	resultUser, err := service.User("user1", 1, 1)
 
 	assert.NoError(t, err)
 	assert.Equal(t, user.UUID, resultUser.UUID)
@@ -110,7 +110,7 @@ func TestUService_User_NotFound(t *testing.T) {
 
 	mockUserRepo.On("User", "user1").Return(&MockUserBox{}, errors.New("user not found"))
 
-	user, err := service.User("user1")
+	user, err := service.User("user1", 1, 1)
 
 	assert.Error(t, err)
 	assert.Nil(t, user)

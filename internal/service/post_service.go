@@ -12,7 +12,7 @@ type (
 		Comment(comment string, post *models.Post, user *models.User) (*models.Post, error)
 		Like(post *models.Post, user *models.User) (*models.Post, error)
 		Repost(post *models.Post, user *models.User) (*models.Post, error)
-		Comments(post *models.Post) ([]models.Post, error)
+		Comments(post *models.Post, page, limit int) ([]models.Post, error)
 	}
 
 	PService struct {
@@ -53,10 +53,11 @@ func (p *PService) Comment(comment string, post *models.Post, user *models.User)
 	return post, nil
 }
 
-func (p *PService) Comments(post *models.Post) ([]models.Post, error) {
+func (p *PService) Comments(post *models.Post, page, limit int) ([]models.Post, error) {
 	comments, err := p.PostRepository.FindBy(
 		repository.FindPostWithParentUUID(post.UUID),
 		repository.FindPostWithType(models.TypeComment),
+		repository.FindPostWithPage(page, limit),
 	)
 	if err != nil {
 		return nil, err

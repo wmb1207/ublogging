@@ -73,9 +73,11 @@ func FromUserModel(user *models.User) *User {
 	}
 
 	return &User{
-		UUID:     getObjectID(user.UUID),
-		Email:    user.Email,
-		Username: user.Username,
+		UUID:      getObjectID(user.UUID),
+		Email:     user.Email,
+		Username:  user.Username,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
 	}
 }
 
